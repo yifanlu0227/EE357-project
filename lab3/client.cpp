@@ -16,6 +16,7 @@ using namespace std;
 int sockfd;
 
 static void * pthread(void *arg){
+    // used for receive message from server (indeed other clients)
     while(1){
         char buf[LEN];
         int recv_len = recv(sockfd,buf,LEN,0);
@@ -25,42 +26,11 @@ static void * pthread(void *arg){
         memset(buf,'\0',LEN);
     }
     return NULL;
-}
+} 
 
 
 
 int main(){
-    // pid_t pid;
-    // pid = fork();
-    // if(pid==0){ //child process, used for listening
-    //     int sockfd;
-    //     struct addrinfo hints,*res;
-    //     memset(&hints,0,sizeof hints);
-    //     hints.ai_family = AF_INET;
-    //     hints.ai_socktype = SOCK_STREAM;
-    //     hints.ai_flags = AI_PASSIVE;
-    //     getaddrinfo(NULL,PORT,&hints,&res);
-    //     sockfd = socket(res->ai_family,res->ai_socktype,res->ai_protocol);
-    //     bind(sockfd,res->ai_addr,res->ai_addrlen);
-    //     if(listen(sockfd,BACKLOG) == -1){
-    //         perror("listen");
-    //         exit(1);
-    //     }
-    //     struct sockaddr_storage their_addr;
-    //     socklen_t addr_size = sizeof(their_addr);
-    //     int new_fd = accept(sockfd,(struct sockaddr*) &their_addr,&addr_size);
-    //     if(new_fd == -1){
-    //         perror("accept");
-    //         exit(0);
-    //     }
-    //     while(1){
-    //         char buf[LEN];
-    //         int recv_len = recv(new_fd,buf,LEN,0);
-    //         cout<<"<<< "<<buf<<endl;
-    //         memset(buf,'\0',LEN);
-    //     }
-    // }
-
     
     struct addrinfo hints,*res;
 
@@ -68,20 +38,16 @@ int main(){
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     getaddrinfo(SERVER_IP,PORT,&hints,&res);
-
+    // sockfd for client to connect to the server
     sockfd = socket(res->ai_family,res->ai_socktype,res->ai_protocol);
     connect(sockfd,res->ai_addr,res->ai_addrlen);
     char msg[] = "Hello everyone!";
-    // char hostname[LEN] = {0};
-    // gethostname(hostname,LEN);
-    // struct hostent *hent = gethostbyname(hostname);
-    // char *ip = inet_ntoa(*(struct in_addr*)(hent->h_addr_list[0]));
-    // cout<<ip<<endl;
     
     int len,bytes_sent;
     len = strlen(msg);
     bytes_sent = send(sockfd,msg,len,0);
-    
+
+    // create thread
     pthread_t tid;
     if ((pthread_create(&tid, NULL, pthread, NULL)) == -1){
         cout<<("create error!\n");
@@ -89,6 +55,7 @@ int main(){
     }
     cout<<"Thread created."<<endl; 
 
+    // for user to input 
     char text[LEN];
     while(1){
         memset(text,'\0',LEN);

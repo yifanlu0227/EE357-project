@@ -38,8 +38,7 @@ static void * pthread(void *arg){
         int recv_len = recv(new_fd,buf,LEN,0);
 
         // indicating server have received the message
-        if(recv_len==-1){cout<<"receive failed."<<endl; break;}
-        else if(recv_len==0){cout<<"Closed by remote side."<<endl; 
+        if(recv_len==0 || recv_len==-1){cout<<"Closed by remote side."<<endl; 
             close(sockfd_table[client_ip]);
             sockfd_table.erase(client_ip);
             break;
@@ -52,7 +51,7 @@ static void * pthread(void *arg){
 
         
         int sendfd;
-        // broadcast to other clients
+        // broadcast to other clients, excluding myself
         for(map<string,int>::iterator iter=sockfd_table.begin();iter!=sockfd_table.end();iter++){
             if(client_ip == iter->first)
                 continue;
@@ -72,15 +71,13 @@ int main(int argc,char *argv[]){
     struct addrinfo hints,*res;
     int sockfd,client_num=0;
 
-
-
     memset(&hints,0,sizeof hints);
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE; // refer to self.
 
     getaddrinfo(NULL,PORT,&hints,&res);
-    // make a socket
+    // make a socket for listening
     sockfd = socket(res->ai_family,res->ai_socktype,res->ai_protocol);
 
     bind(sockfd,res->ai_addr,res->ai_addrlen);
@@ -91,29 +88,34 @@ int main(int argc,char *argv[]){
     }
 
     cout<<"Waiting for connection"<<endl;
-    // accept an incoming connection
-    // Structure large enough to hold any socket address
 
     while(1){
+        // this loop is used for accepting new TCP connection
+        //
+        // accept an incoming connection
+        // Structure large enough to hold any socket address
         struct sockaddr_storage their_addr;
         socklen_t addr_size = sizeof(their_addr);
-        int new_fd = accept(sockfd,(struct sockaddr*) &their_addr,&addr_size); // 
+        // new_fd is create for connection with the client
+        int new_fd = accept(sockfd,(struct sockaddr*) &their_addr,&addr_size); 
         if(new_fd == -1){
             perror("accept");
             continue;
         }
+        //get ip address
         char s[LEN];
         inet_ntop(their_addr.ss_family,get_in_addr((struct sockaddr*)&their_addr),s,sizeof s);
         string ip_addr = s;
         map<string,int>::iterator iter = sockfd_table.find(s);
-
+        // add new_fd to sockfd
         if(iter==sockfd_table.end()){
             sockfd_table.insert(pair<string,int>(ip_addr,new_fd));
             cout<<"Server: got new connection from "<<ip_addr<<endl;
             // echo for acknowledge
             char text[] = "Acknowledge from server.";
             int byte_send = send(new_fd,text,strlen(text),0);
-
+            
+            // create new thread for receiving any subsequent message.
             pthread_t tid;
             if ((pthread_create(&tid, NULL, pthread, s)) == -1){
                 cout<<("create error!\n");
