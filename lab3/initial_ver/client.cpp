@@ -17,7 +17,7 @@ using namespace std;
 int main(){
     pid_t pid;
     pid = fork();
-    if(pid==0){ //child process, used for listening
+    if(pid==0){ //child process
         int sockfd;
         struct addrinfo hints,*res;
         memset(&hints,0,sizeof hints);
@@ -27,19 +27,20 @@ int main(){
         getaddrinfo(NULL,PORT2,&hints,&res);
         sockfd = socket(res->ai_family,res->ai_socktype,res->ai_protocol);
         bind(sockfd,res->ai_addr,res->ai_addrlen);
+
         if(listen(sockfd,BACKLOG) == -1){
             perror("listen");
             exit(1);
         }
-        struct sockaddr_storage their_addr;
-        socklen_t addr_size = sizeof(their_addr);
-        int new_fd = accept(sockfd,(struct sockaddr*) &their_addr,&addr_size);
-        cout<<3<<endl;
-        if(new_fd == -1){
-            perror("accept");
-            exit(0);
-        }
         while(1){
+            // cout<<"Ready for receive chatting message."<<endl;
+            struct sockaddr_storage their_addr;
+            socklen_t addr_size = sizeof(their_addr);
+            int new_fd = accept(sockfd,(struct sockaddr*) &their_addr,&addr_size);
+            if(new_fd == -1){
+                perror("accept");
+                exit(0);
+            }
             char buf[LEN];
             int recv_len = recv(new_fd,buf,LEN,0);
             cout<<"<<< "<<buf<<endl;
@@ -67,6 +68,7 @@ int main(){
         int len,bytes_sent;
         len = strlen(msg);
         bytes_sent = send(sockfd,msg,len,0);
+        close(sockfd);
 
         char text[LEN];
         while(1){
@@ -74,8 +76,10 @@ int main(){
             cout<<">>>";
             cin.getline(text,LEN);
             len = strlen(text);
+            sockfd = socket(res->ai_family,res->ai_socktype,res->ai_protocol); //之前的被socket被close了，这里新拿一个。
+            connect(sockfd,res->ai_addr,res->ai_addrlen);
             bytes_sent = send(sockfd,text,len,0);
-            // cout<<"byte_sents "<<bytes_sent<<endl;
+            close(sockfd);
         }
         int status;
         wait(&status);
