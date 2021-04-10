@@ -14,14 +14,12 @@
 #include<map>
 
 #define PORT "3490"
-#define PORT2 "3491"
 #define BACKLOG 20
 #define LEN 100
 #define MAX_CLIENT 20
 using namespace std;
 
-map<string,int> recvfd_table;
-map<string,int> sendfd_table;
+map<string,int> sockfd_table;
 
 void *get_in_addr(struct sockaddr *sa){
     if(sa->sa_family == AF_INET){
@@ -34,7 +32,7 @@ static void * pthread(void *arg){
     char *ip_addr = (char *)arg;
     char buf[LEN];
     string client_ip = ip_addr;
-    int new_fd = recvfd_table[client_ip];
+    int new_fd = sockfd_table[client_ip];
     while(1){
         memset(buf,'\0',LEN);
         int recv_len = recv(new_fd,buf,LEN,0);
@@ -42,10 +40,8 @@ static void * pthread(void *arg){
         // indicating server have received the message
         if(recv_len==-1){cout<<"receive failed."<<endl; break;}
         else if(recv_len==0){cout<<"Closed by remote side."<<endl; 
-            close(sendfd_table[client_ip]);
-            close(recvfd_table[client_ip]);
-            sendfd_table.erase(client_ip);
-            recvfd_table.erase(client_ip);
+            close(sockfd_table[client_ip]);
+            sockfd_table.erase(client_ip);
             break;
         }
         else {cout<<"Received:"<<buf<<endl;}
@@ -57,7 +53,7 @@ static void * pthread(void *arg){
         
         int sendfd;
         // broadcast to other clients
-        for(map<string,int>::iterator iter=sendfd_table.begin();iter!=sendfd_table.end();iter++){
+        for(map<string,int>::iterator iter=sockfd_table.begin();iter!=sockfd_table.end();iter++){
             if(client_ip == iter->first)
                 continue;
             sendfd = iter->second;
@@ -109,24 +105,14 @@ int main(int argc,char *argv[]){
         char s[LEN];
         inet_ntop(their_addr.ss_family,get_in_addr((struct sockaddr*)&their_addr),s,sizeof s);
         string ip_addr = s;
-        map<string,int>::iterator iter = recvfd_table.find(s);
+        map<string,int>::iterator iter = sockfd_table.find(s);
 
-        if(iter==recvfd_table.end()){
-            recvfd_table.insert(pair<string,int>(ip_addr,new_fd));
+        if(iter==sockfd_table.end()){
+            sockfd_table.insert(pair<string,int>(ip_addr,new_fd));
             cout<<"Server: got new connection from "<<ip_addr<<endl;
             // echo for acknowledge
-            struct addrinfo hints,*res;
-            memset(&hints,0,sizeof hints);
-            hints.ai_family = AF_INET;
-            hints.ai_socktype = SOCK_STREAM;
-            getaddrinfo(ip_addr.c_str(),PORT2,&hints,&res);
-            int sendfd = socket(res->ai_family,res->ai_socktype,res->ai_protocol);
-            connect(sendfd,res->ai_addr,res->ai_addrlen);
-            sendfd_table.insert(pair<string,int>(ip_addr,sendfd));
-            char text[] = "Acknowledge from server. \0";
-            int byte_send = send(sendfd,text,strlen(text),0);
-            // cout<<"byte send in ack:"<<byte_send<<endl;
-
+            char text[] = "Acknowledge from server.";
+            int byte_send = send(new_fd,text,strlen(text),0);
 
             pthread_t tid;
             if ((pthread_create(&tid, NULL, pthread, s)) == -1){
@@ -135,9 +121,6 @@ int main(int argc,char *argv[]){
             }
             cout<<"Thread created."<<endl;
         }
-
-
-        
 
     }
 

@@ -73,21 +73,16 @@ int main(int argc,char *argv[]){
         inet_ntop(their_addr.ss_family,get_in_addr((struct sockaddr*)&their_addr),s,sizeof s);
         cout<<"Server: got connection from "<<s<<endl;
         char buf[LEN];
-
         int recv_len = recv(new_fd,buf,LEN,0);
 
         // indicating server have received the message
-        if(recv_len==-1){
-            cout<<"receive"<<endl;
-            break;
-        }
-        else if(recv_len==0){
-            cout<<"Closed by remote side."<<endl;
-            break;
-        }
-        else{
-            cout<<"recv_len"<<recv_len<<" Received:"<<buf<<endl;
-        }
+        char msg[] = "Hello I am server test!";
+    
+        int len,bytes_sent;
+        len = strlen(msg);
+        bytes_sent = send(new_fd,msg,len,0);
+        cout<<"server sent bytes:"<<bytes_sent<<endl;
+
         close(new_fd);
     }
 

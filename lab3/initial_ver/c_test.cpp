@@ -31,16 +31,20 @@ int main(){
     len = strlen(msg);
     bytes_sent = send(sockfd,msg,len,0);
     char text[LEN];
-    while(1){
-        cout<<">>>";
-        cin>>text;
-        len = strlen(text);
-        // sockfd = socket(res->ai_family,res->ai_socktype,res->ai_protocol);
-        // connect(sockfd,res->ai_addr,res->ai_addrlen);
-        bytes_sent = send(sockfd,text,len,0);
-        cout<<"byte_sent:"<<bytes_sent<<endl;
-        // close(sockfd); 如果不close的话会不断增长
-    }
+    char buf[LEN];
+    int recv_len = recv(sockfd,buf,LEN,0);
+    cout<<"client_received len:"<<recv_len<<" context:"<<buf<<endl;
+
+    // while(1){
+    //     cout<<">>>";
+    //     cin>>text;
+    //     len = strlen(text);
+    //     // sockfd = socket(res->ai_family,res->ai_socktype,res->ai_protocol);
+    //     // connect(sockfd,res->ai_addr,res->ai_addrlen);
+    //     bytes_sent = send(sockfd,text,len,0);
+    //     cout<<"byte_sent:"<<bytes_sent<<endl;
+    //     // close(sockfd); 如果不close的话会不断增长
+    // }
 
     return 0;
 }
