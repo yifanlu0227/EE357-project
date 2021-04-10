@@ -1,8 +1,8 @@
-client.cpp 和 server.cpp 是TCP连接的初始版本，每次连接都要新的sock，将要写新的版本会保存新加入进来的客户端的sockfd
+client.cpp 和 server.cpp 
 
 ## Usage
 g++ server.cpp -o server -lpthread
-g++ client.cpp -o client
+g++ client.cpp -o client -lpthread
 
 sudo mn --custom lab3-topo.py --topo lab3topo
 xterm h1
@@ -12,3 +12,6 @@ xterm h4
 
 在h1里运行server，其他三个运行client
 
+旧的commit说明
+"second ver, use process" 该版本使用fork导致sockfd查找表进程间不共享
+"Finish TCP chat room" 该版本客户端和服务器一来一回创建了两条TCP连接，太傻了
