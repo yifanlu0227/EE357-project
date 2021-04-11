@@ -34,7 +34,9 @@ g++ udpclient.cpp -o udpclient -lpthread
 "Finish TCP chat room" 该版本客户端和服务器一来一回创建了两条TCP连接，太傻了
 
 #### 笔记
-如果fd不手动close的话，创建新的socket操作系统会一直分配fd给进程，直至耗尽（打开文件数量上限）
+如果fd不手动close的话，创建新的socket操作系统会一直分配fd给进程，直至耗尽（打开文件数量上限）。
+
+TCP我们需要多个socket，以服务器端来说，有三个主机来建立连接，因此socket要有3个。
 
 UDP版本中，我们只需要创建一个socket，同时负责收/发的工作，因为是无连接的协议，收发到数据也就完成了一次通信，恢复原样。
 
