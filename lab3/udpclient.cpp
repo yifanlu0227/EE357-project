@@ -12,6 +12,7 @@
 #define PORT "4490"
 #define LEN 100
 using namespace std;
+int sockfd;
 
 void *get_in_addr(struct sockaddr *sa) {
     if (sa->sa_family == AF_INET) {
@@ -32,12 +33,7 @@ static void * pthread(void *arg){
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags = AI_PASSIVE;
     getaddrinfo(NULL,PORT,&hints,&res);
-    int sockfd = socket(res->ai_family,res->ai_socktype,res->ai_protocol);
-    if(bind(sockfd,res->ai_addr,res->ai_addrlen)==-1){
-        close(sockfd);
-        perror("Listener:bind");
-        return NULL;
-    }
+    // int sockfd = socket(res->ai_family,res->ai_socktype,res->ai_protocol);
     cout<<"Listener: waiting for recvfrom...\n";
     while(1){
         char buf[LEN];
@@ -61,17 +57,28 @@ int main(){
     
     struct addrinfo hints,*res;
     string clients[]={"10.0.0.1","10.0.0.2","10.0.0.3","10.0.0.4"};
-    int num_clients = 4,sockfd,len,bytes_sent;
-    vector<int> sockfds;
+    int num_clients = 4,len,bytes_sent;
     vector<struct sockaddr*> destaddrs;
+    
+    // 设置其他客户地址
     for(int i=0;i<4;i++){
         memset(&hints,0,sizeof hints);
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_DGRAM;
         getaddrinfo(clients[i].c_str(),PORT,&hints,&res);
-        sockfd = socket(res->ai_family,res->ai_socktype,res->ai_protocol);
-        sockfds.push_back(sockfd);
+        // sockfd = socket(res->ai_family,res->ai_socktype,res->ai_protocol);
+        // sockfds.push_back(sockfd);
         destaddrs.push_back(res->ai_addr);
+    }
+
+    memset(&hints,0,sizeof hints);
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_flags = AI_PASSIVE;
+    getaddrinfo(NULL,PORT,&hints,&res);
+    sockfd = socket(res->ai_family,res->ai_socktype,res->ai_protocol);
+    if(bind(sockfd,res->ai_addr,res->ai_addrlen)==-1){
+        close(sockfd); perror("Listener:bind");
     }
 
     pthread_t tid;
@@ -87,7 +94,6 @@ int main(){
     len = strlen(text);
     do{
         for(int i=0;i<4;i++){
-            sockfd = sockfds[i];
             struct sockaddr* ai_addr = destaddrs[i];
             bytes_sent = sendto(sockfd,text,len,0,ai_addr,sizeof *ai_addr);
         }
@@ -96,6 +102,7 @@ int main(){
         cin.getline(text,LEN);
         len = strlen(text);
     }while(1);
+    close(sockfd);
   
 
     return 0;
