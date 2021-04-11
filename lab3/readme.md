@@ -1,3 +1,5 @@
+# TCP version
+
 client.cpp 和 server.cpp 
 
 ## Usage
@@ -16,6 +18,14 @@ xterm h3
 xterm h4
 
 在h1里运行server，其他三个运行client
+
+# UDP version
+
+udpclient.cpp
+
+## Usage 
+
+g++ udpclient.cpp -o udpclient -lpthread
 
 #### 旧的commit说明
 
